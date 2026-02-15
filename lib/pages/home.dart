@@ -217,7 +217,7 @@ class _HomePageState extends State<HomePage> {
       // appbar
       appBar: AppBar(
         title: const Text(
-          "Todo Basic",
+          "ToDo",
           style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
         ),
         backgroundColor: Colors.blueGrey,
