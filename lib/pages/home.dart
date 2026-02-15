@@ -101,7 +101,7 @@ class _HomePageState extends State<HomePage> {
       context: context,
       builder: (context) => Addtile(
         controller: _controller,
-        onSave: saveNewTile,
+        onSave: saveNewTab,
         onCancel: () => Navigator.pop(context),
         work: "Tab",
       ),
@@ -109,13 +109,15 @@ class _HomePageState extends State<HomePage> {
   }
 
   // save a new Tile
-  void saveNewTile() {
+  void saveNewTab() {
     if (_controller.text.trim().isEmpty) return;
 
     setState(() {
       tabs.add(TabData(title: _controller.text.trim()));
       selectedTabIndex = tabs.length - 1;
     });
+    Navigator.pop(context);
+    _controller.clear();
     saveData();
   }
 
