@@ -11,35 +11,83 @@ class HomePage extends StatefulWidget {
   State<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> {
-  final _controller = TextEditingController();
-  List<List<String>> todoList = [];
+//  data saving structures
+class Todo {
+  String title;
+  bool isCompleted;
 
-  // load data on init
+  Todo({required this.title, this.isCompleted = false});
+
+  Map<String, dynamic> toJson() {
+    return {"title": title, "isCompleted": isCompleted};
+  }
+
+  factory Todo.fromJson(Map<String, dynamic> json) {
+    return Todo(title: json["title"], isCompleted: json["isCompleted"]);
+  }
+}
+
+class TabData {
+  String title;
+  List<Todo> todoList;
+
+  TabData({required this.title, List<Todo>? todoList})
+    : todoList = todoList ?? [];
+
+  Map<String, dynamic> toJson() {
+    return {
+      "title": title,
+      "todoList": todoList.map((e) => e.toJson()).toList(),
+    };
+  }
+
+  factory TabData.fromJson(Map<String, dynamic> json) {
+    return TabData(
+      title: json["title"],
+      todoList: (json["todoList"] as List)
+          .map((e) => Todo.fromJson(e))
+          .toList(),
+    );
+  }
+}
+
+class _HomePageState extends State<HomePage> {
+  final TextEditingController _controller = TextEditingController();
+
+  late List<TabData> tabs;
+  int selectedTabIndex = 0;
+  bool isLoading = true;
+
   @override
   void initState() {
     super.initState();
+
+    tabs = [
+      TabData(title: "Personal"),
+      TabData(title: "Work"),
+      TabData(title: "Study"),
+    ];
+
     loadData();
   }
 
-  // to save data to local
+  // shared prefrences savedata logic
   Future<void> saveData() async {
     final prefs = await SharedPreferences.getInstance();
-    String encoded = jsonEncode(todoList);
-    await prefs.setString("TODOLIST", encoded);
+
+    List<Map<String, dynamic>> jsonList = tabs.map((e) => e.toJson()).toList();
+
+    await prefs.setString("ALL_TABS", jsonEncode(jsonList));
   }
 
-  bool isLoading = true;
-
-  // retrieve local's data
+  // shared prefrences loaddata logic
   Future<void> loadData() async {
     final prefs = await SharedPreferences.getInstance();
-    String? data = prefs.getString("TODOLIST");
+    String? data = prefs.getString("ALL_TABS");
 
     if (data != null) {
-      todoList = List<List<String>>.from(
-        jsonDecode(data).map((x) => List<String>.from(x)),
-      );
+      List decoded = jsonDecode(data);
+      tabs = decoded.map((e) => TabData.fromJson(e)).toList();
     }
 
     setState(() {
@@ -47,97 +95,203 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
-  String iconText = "Hello work";
+  //  new tab add logic
+  void addTab() {
+    showDialog(
+      context: context,
+      builder: (context) => Addtile(
+        controller: _controller,
+        onSave: saveNewTile,
+        onCancel: () => Navigator.pop(context),
+        work: "Tab",
+      ),
+    );
+  }
 
-  void savenewtask() {
+  // save a new Tile
+  void saveNewTile() {
     if (_controller.text.trim().isEmpty) return;
 
     setState(() {
-      todoList.add([_controller.text.trim()]);
-      Navigator.of(context).pop();
-      _controller.clear();
+      tabs.add(TabData(title: _controller.text.trim()));
+      selectedTabIndex = tabs.length - 1;
+    });
+    saveData();
+  }
+
+  // delets a tab using index logic
+  void deleteTab(int index) {
+    setState(() {
+      tabs.removeAt(index);
+
+      if (tabs.isEmpty) {
+        tabs.add(TabData(title: "New Tab"));
+        selectedTabIndex = 0;
+      } else if (selectedTabIndex >= tabs.length) {
+        selectedTabIndex = tabs.length - 1;
+      }
     });
 
     saveData();
   }
 
+  // save a new task
+  void saveNewTask() {
+    if (_controller.text.trim().isEmpty) return;
+
+    setState(() {
+      tabs[selectedTabIndex].todoList.add(Todo(title: _controller.text.trim()));
+    });
+
+    Navigator.pop(context);
+    _controller.clear();
+
+    saveData();
+  }
+
+  // add a new tile
   void addTile() {
     showDialog(
       context: context,
-      builder: (context) {
-        return Addtile(
-          controller: _controller,
-          onSave: savenewtask,
-          onCancel: () => Navigator.of(context).pop(),
-        );
-      },
+      builder: (context) => Addtile(
+        controller: _controller,
+        onSave: saveNewTask,
+        onCancel: () => Navigator.pop(context),
+        work: "Task",
+      ),
     );
   }
 
-  void deletetask(int ind) {
+  // toggle a task
+  void toggleTask(int index) {
     setState(() {
-      todoList.removeAt(ind);
+      tabs[selectedTabIndex].todoList[index].isCompleted =
+          !tabs[selectedTabIndex].todoList[index].isCompleted;
     });
+
+    saveData();
+  }
+
+  // delets a task
+  void deleteTask(int index) {
+    setState(() {
+      tabs[selectedTabIndex].todoList.removeAt(index);
+    });
+
     saveData();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color.fromARGB(255, 186, 138, 121),
+      backgroundColor: const Color.fromARGB(255, 238, 217, 210),
 
       // floating action button
       floatingActionButton: FloatingActionButton(
         onPressed: addTile,
         backgroundColor: Colors.blueGrey,
-        child: Icon(
-          Icons.add_box_outlined,
-          size: 50,
-          color: const Color.fromARGB(255, 186, 138, 121),
-        ),
+        child: const Icon(Icons.add),
       ),
-      // AppBar
+
+      // appbar
       appBar: AppBar(
-        title: Text(
+        title: const Text(
           "Todo Basic",
-          style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold),
+          style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
         ),
-        elevation: 0,
-        // shadowColor: Colors.black,
         backgroundColor: Colors.blueGrey,
       ),
-      // Drawer
-      drawer: Drawer(
-        backgroundColor: Colors.blueGrey,
-        width: 200,
-        child: Column(
-          children: [
-            DrawerHeader(
-              child: Text(
-                "Lets Schedule EveryThing....",
-                style: TextStyle(
-                  color: Colors.amber,
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-            ElevatedButton(onPressed: null, child: Text("LogOut")),
-          ],
-        ),
-      ),
-      // Body
+
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
-          : Padding(
-              padding: const EdgeInsets.only(top: 18),
-              child: ListView.builder(
-                itemCount: todoList.length,
-                itemBuilder: (context, index) => Todotile(
-                  iconText: todoList[index][0],
-                  deletetile: (context) => deletetask(index),
+          : Column(
+              children: [
+                SizedBox(
+                  height: 60,
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: ListView.builder(
+                          scrollDirection: Axis.horizontal,
+                          itemCount: tabs.length,
+                          itemBuilder: (context, index) {
+                            bool isSelected = selectedTabIndex == index;
+
+                            return GestureDetector(
+                              onTap: () {
+                                setState(() {
+                                  selectedTabIndex = index;
+                                });
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 20,
+                                  vertical: 10,
+                                ),
+                                margin: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: isSelected
+                                      ? Colors.blueGrey
+                                      : Colors.blueGrey.shade200,
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      tabs[index].title,
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        color: isSelected
+                                            ? Colors.white
+                                            : Colors.black,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    GestureDetector(
+                                      onTap: () => deleteTab(index),
+                                      child: Icon(
+                                        Icons.close,
+                                        size: 18,
+                                        color: isSelected
+                                            ? Colors.white
+                                            : Colors.black,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+
+                      // add button in tabs list
+                      IconButton(
+                        onPressed: addTab,
+                        icon: const Icon(Icons.add),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
+
+                //  main task list
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.only(top: 18),
+                    child: ListView.builder(
+                      itemCount: tabs[selectedTabIndex].todoList.length,
+                      itemBuilder: (context, index) => Todotile(
+                        iconText: tabs[selectedTabIndex].todoList[index].title,
+                        iconstatus:
+                            tabs[selectedTabIndex].todoList[index].isCompleted,
+                        onToggle: () => toggleTask(index),
+                        deletetile: (context) => deleteTask(index),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
     );
   }

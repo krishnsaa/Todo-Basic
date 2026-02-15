@@ -5,18 +5,20 @@ class Addtile extends StatelessWidget {
   final TextEditingController controller;
   final VoidCallback onSave;
   final VoidCallback onCancel;
+  final String work;
   const Addtile({
     super.key,
     required this.controller,
     required this.onSave,
     required this.onCancel,
+    required this.work,
   });
 
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text("Add Task"),
-      backgroundColor: Colors.blueGrey,
+      title: Text("Add New $work"),
+      backgroundColor: const Color.fromARGB(255, 181, 200, 210),
       content: SizedBox(
         height: 200,
         width: 200,
@@ -26,7 +28,7 @@ class Addtile extends StatelessWidget {
             TextField(
               controller: controller,
               decoration: InputDecoration(
-                hint: Text("Type your Task..", style: TextStyle(fontSize: 20)),
+                hint: Text("Type Here..", style: TextStyle(fontSize: 20)),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.all(Radius.circular(4.0)),
                 ),
