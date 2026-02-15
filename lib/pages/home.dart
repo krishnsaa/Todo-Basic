@@ -194,7 +194,26 @@ class _HomePageState extends State<HomePage> {
         backgroundColor: Colors.blueGrey,
         child: const Icon(Icons.add),
       ),
-
+      // Drawer
+      drawer: Drawer(
+        backgroundColor: Colors.blueGrey,
+        width: 200,
+        child: Column(
+          children: [
+            DrawerHeader(
+              child: Text(
+                "Lets get All Task done....",
+                style: TextStyle(
+                  color: Colors.amber,
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            ElevatedButton(onPressed: null, child: Text("LogOut")),
+          ],
+        ),
+      ),
       // appbar
       appBar: AppBar(
         title: const Text(
