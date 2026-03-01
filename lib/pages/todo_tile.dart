@@ -6,6 +6,7 @@ class Todotile extends StatelessWidget {
   final bool iconstatus;
   final VoidCallback onToggle;
   final Function(BuildContext)? deletetile;
+  final Function(BuildContext)? editTask;
 
   const Todotile({
     super.key,
@@ -13,6 +14,7 @@ class Todotile extends StatelessWidget {
     required this.iconstatus,
     required this.onToggle,
     required this.deletetile,
+    required this.editTask,
   });
 
   @override
@@ -44,12 +46,15 @@ class Todotile extends StatelessWidget {
           child: Row(
             children: [
               IconButton(onPressed: onToggle, icon: Icon(icon)),
-              Text(
-                iconText,
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                  decoration: iconstatus ? TextDecoration.lineThrough : null,
+              GestureDetector(
+                onTap: () => editTask?.call(context),
+                child: Text(
+                  iconText,
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    decoration: iconstatus ? TextDecoration.lineThrough : null,
+                  ),
                 ),
               ),
             ],

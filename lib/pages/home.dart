@@ -108,6 +108,37 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  void editTask(index) {
+    _controller.text = tabs[selectedTabIndex].todoList[index].title;
+    showDialog(
+      context: context,
+      builder: (context) => Addtile(
+        controller: _controller,
+        onSave: () => saveEditTask(index),
+        onCancel: () {
+          _controller.clear();
+          Navigator.pop(context);
+        },
+        work: "edit task",
+      ),
+    );
+  }
+
+  void saveEditTask(index) {
+    if (_controller.text.trim().isEmpty) return;
+
+    setState(() {
+      tabs[selectedTabIndex].todoList[index] = Todo(
+        title: _controller.text.trim(),
+      );
+    });
+
+    _controller.clear();
+    Navigator.pop(context);
+
+    saveData();
+  }
+
   // save a new Tile
   void saveNewTab() {
     if (_controller.text.trim().isEmpty) return;
@@ -308,6 +339,7 @@ class _HomePageState extends State<HomePage> {
                             tabs[selectedTabIndex].todoList[index].isCompleted,
                         onToggle: () => toggleTask(index),
                         deletetile: (context) => deleteTask(index),
+                        editTask: (context) => editTask(index),
                       ),
                     ),
                   ),
